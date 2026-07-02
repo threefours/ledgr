@@ -89,41 +89,41 @@ struct DashboardView: View {
 
     // MARK: - Category Breakdown
 
+    @ViewBuilder
     private var categoryBreakdown: some View {
         let expenses = storage.expenseByCategory(for: storage.thisMonth())
 
-        guard !expenses.isEmpty else { return EmptyView().eraseToAnyView() }
+        if !expenses.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Spending by Category")
+                    .font(.headline)
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text("Spending by Category")
-                .font(.headline)
+                ForEach(expenses.prefix(5), id: \.0.id) { category, total in
+                    HStack {
+                        Circle()
+                            .fill(category.color)
+                            .frame(width: 12, height: 12)
 
-            ForEach(expenses.prefix(5), id: \.0.id) { category, total in
-                HStack {
-                    Circle()
-                        .fill(category.color)
-                        .frame(width: 12, height: 12)
+                        Image(systemName: category.icon)
+                            .foregroundStyle(category.color)
+                            .frame(width: 20)
 
-                    Image(systemName: category.icon)
-                        .foregroundStyle(category.color)
-                        .frame(width: 20)
+                        Text(category.name)
+                            .font(.subheadline)
 
-                    Text(category.name)
-                        .font(.subheadline)
+                        Spacer()
 
-                    Spacer()
-
-                    Text(CurrencyFormatter.format(total, currencyCode: storage.baseCurrency))
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        Text(CurrencyFormatter.format(total, currencyCode: storage.baseCurrency))
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                    }
+                    .padding(.vertical, 4)
                 }
-                .padding(.vertical, 4)
             }
+            .padding()
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .padding()
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .eraseToAnyView()
     }
 
     // MARK: - Recent Transactions
@@ -206,14 +206,6 @@ struct TransactionRow: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Helper
-
-extension View {
-    func eraseToAnyView() -> AnyView {
-        AnyView(self)
     }
 }
 
