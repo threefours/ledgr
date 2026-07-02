@@ -57,27 +57,28 @@ struct AddCategoryView: View {
                 }
 
                 Section("Icon") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 12) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
                         ForEach(iconOptions, id: \.self) { ic in
                             Button {
                                 icon = ic
                             } label: {
                                 Image(systemName: ic)
-                                    .font(.system(size: 20))
+                                    .font(.system(size: 18))
                                     .foregroundStyle(icon == ic ? .white : .secondary)
-                                    .frame(width: 36, height: 36)
+                                    .frame(width: 40, height: 40)
                                     .background(
                                         Circle()
-                                            .fill(icon == ic ? Color(hex: colorHex) : Color.clear)
+                                            .fill(icon == ic ? Color(hex: colorHex) : Color(.systemGray6))
                                     )
                             }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 6)
                 }
 
                 Section("Color") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 12) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: 14) {
                         ForEach(colorOptions, id: \.self) { hex in
                             Button {
                                 colorHex = hex
@@ -87,13 +88,14 @@ struct AddCategoryView: View {
                                     .frame(width: 40, height: 40)
                                     .overlay(
                                         Circle()
-                                            .stroke(.white, lineWidth: colorHex == hex ? 3 : 0)
+                                            .stroke(Color.primary, lineWidth: colorHex == hex ? 3 : 0)
                                     )
-                                    .shadow(color: colorHex == hex ? Color(hex: hex).opacity(0.5) : .clear, radius: 4)
+                                    .shadow(color: colorHex == hex ? Color(hex: hex).opacity(0.4) : .clear, radius: 4)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 6)
                 }
 
                 Section("Preview") {

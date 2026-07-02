@@ -3,6 +3,7 @@ import SwiftUI
 struct TransactionListView: View {
     @Environment(StorageManager.self) private var storage
     @State private var showingAdd = false
+    @State private var editingTransaction: Transaction?
     @State private var filterType: TransactionType? = nil
     @State private var searchText = ""
 
@@ -68,13 +69,33 @@ struct TransactionListView: View {
                 ForEach(groupedTransactions, id: \.0) { dateKey, txs in
                     Section(dateKey) {
                         ForEach(txs) { tx in
-                            TransactionRow(transaction: tx)
+                            Button {
+                                editingTransaction = tx
+                            } label: {
+                                TransactionRow(transaction: tx)
+                            }
+                            .buttonStyle(.plain)
                         }
                         .onDelete { offsets in
                             for idx in offsets {
                                 storage.deleteTransaction(txs[idx].id)
                             }
                         }
+                    }
+                }
+
+                // Empty state
+                if filteredTransactions.isEmpty && !storage.transactions.isEmpty {
+                    ContentUnavailableView(
+                        "No Matching Transactions",
+                        systemImage: "magnifyingglass",
+                        description: Text("Try adjusting your search or filter.")
+                    )
+                } else if storage.transactions.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Transactions", systemImage: "tray")
+                    } description: {
+                        Text("Tap + to add your first transaction.")
                     }
                 }
             }
@@ -91,6 +112,9 @@ struct TransactionListView: View {
             }
             .sheet(isPresented: $showingAdd) {
                 AddTransactionView()
+            }
+            .sheet(item: $editingTransaction) { tx in
+                AddTransactionView(editing: tx)
             }
         }
     }
