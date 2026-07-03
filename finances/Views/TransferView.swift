@@ -4,11 +4,19 @@ struct TransferView: View {
     @Environment(StorageManager.self) private var storage
     @Environment(\.dismiss) private var dismiss
 
+    let editing: Transaction?
+
     @State private var fromAccountId: UUID?
     @State private var toAccountId: UUID?
     @State private var amountString = ""
     @State private var note = ""
     @State private var date = Date()
+
+    init(editing: Transaction? = nil) {
+        self.editing = editing
+    }
+
+    private var isEditing: Bool { editing != nil }
 
     private var canSave: Bool {
         guard let from = fromAccountId, let to = toAccountId, from != to else { return false }
@@ -55,17 +63,25 @@ struct TransferView: View {
                     TextField("Note (optional)", text: $note)
                 }
             }
-            .navigationTitle("Transfer")
+            .navigationTitle(isEditing ? "Edit Transfer" : "Transfer")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Transfer") { save() }.disabled(!canSave)
+                    Button(isEditing ? "Update" : "Transfer") { save() }.disabled(!canSave)
                 }
             }
             .onAppear {
-                fromAccountId = storage.accounts.first?.id
-                toAccountId = storage.accounts.dropFirst().first?.id
+                if let editing {
+                    fromAccountId = editing.accountId
+                    toAccountId = editing.destAccountId
+                    amountString = NSDecimalNumber(decimal: editing.amount).stringValue
+                    note = editing.note
+                    date = editing.date
+                } else {
+                    fromAccountId = storage.accounts.first?.id
+                    toAccountId = storage.accounts.dropFirst().first?.id
+                }
             }
         }
     }
@@ -111,13 +127,11 @@ struct TransferView: View {
               let from = fromAccountId,
               let to = toAccountId else { return }
 
-        storage.transfer(
-            amount: amount,
-            from: from,
-            to: to,
-            date: date,
-            note: note.trimmingCharacters(in: .whitespaces)
-        )
+        if let editing {
+            storage.updateTransfer(editing, amount: amount, from: from, to: to, date: date, note: note.trimmingCharacters(in: .whitespaces))
+        } else {
+            storage.transfer(amount: amount, from: from, to: to, date: date, note: note.trimmingCharacters(in: .whitespaces))
+        }
         dismiss()
     }
 }

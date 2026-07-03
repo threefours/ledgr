@@ -182,6 +182,20 @@ final class StorageManager {
         save()
     }
 
+    func updateTransfer(_ tx: Transaction, amount: Decimal, from: UUID, to: UUID, date: Date, note: String) {
+        guard let idx = transactions.firstIndex(where: { $0.id == tx.id }) else { return }
+        var updated = tx
+        updated.amount = amount
+        updated.accountId = from
+        updated.destAccountId = to
+        updated.date = date
+        updated.note = note
+        updated.currencyCode = account(by: from)?.currencyCode ?? tx.currencyCode
+        transactions[idx] = updated
+        transactions.sort { $0.date > $1.date }
+        save()
+    }
+
     // MARK: - Balance for Account (handles transfers)
 
     func balance(forAccount accountId: UUID) -> Decimal {
