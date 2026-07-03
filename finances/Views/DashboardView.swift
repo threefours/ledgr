@@ -304,17 +304,29 @@ struct TransactionRow: View {
                 Text(category?.name ?? "Unknown")
                     .font(.subheadline.weight(.medium))
 
-                HStack(spacing: 4) {
-                    if let account {
-                        Text(account.name)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                if transaction.type == .transfer, let destId = transaction.destAccountId,
+                   let destAcc = storage.account(by: destId) {
+                    HStack(spacing: 4) {
+                        Text(account?.name ?? "?")
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 8, weight: .bold))
+                        Text(destAcc.name)
                     }
-                    if !transaction.note.isEmpty {
-                        Text((account != nil ? "· " : "") + transaction.note)
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                } else {
+                    HStack(spacing: 4) {
+                        if let account {
+                            Text(account.name)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if !transaction.note.isEmpty {
+                            Text((account != nil ? "· " : "") + transaction.note)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
                     }
                 }
             }
@@ -322,10 +334,16 @@ struct TransactionRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
-                let sign = transaction.type == .income ? "+" : "−"
-                Text("\(sign)\(CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode))")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(transaction.type == .income ? .green : .red)
+                if transaction.type == .transfer {
+                    Text(CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.blue)
+                } else {
+                    let sign = transaction.type == .income ? "+" : "−"
+                    Text("\(sign)\(CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode))")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(transaction.type == .income ? .green : .red)
+                }
 
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                     .font(.caption2)

@@ -5,11 +5,13 @@ import Foundation
 enum TransactionType: String, Codable, CaseIterable {
     case income
     case expense
+    case transfer
 
     var label: String {
         switch self {
         case .income: return "Income"
         case .expense: return "Expense"
+        case .transfer: return "Transfer"
         }
     }
 }
@@ -22,6 +24,7 @@ struct Transaction: Codable, Identifiable, Equatable {
     var type: TransactionType
     var categoryId: UUID
     var accountId: UUID
+    var destAccountId: UUID?
     var currencyCode: String
     var note: String
     var date: Date
@@ -33,6 +36,7 @@ struct Transaction: Codable, Identifiable, Equatable {
         type: TransactionType,
         categoryId: UUID,
         accountId: UUID,
+        destAccountId: UUID? = nil,
         currencyCode: String,
         note: String = "",
         date: Date = Date(),
@@ -43,11 +47,12 @@ struct Transaction: Codable, Identifiable, Equatable {
         self.type = type
         self.categoryId = categoryId
         self.accountId = accountId
+        self.destAccountId = destAccountId
         self.currencyCode = currencyCode
         self.note = note
         self.date = date
         self.transferId = transferId
     }
 
-    var isTransfer: Bool { transferId != nil }
+    var isTransfer: Bool { type == .transfer }
 }

@@ -53,7 +53,7 @@ struct AddTransactionView: View {
     private var typeSection: some View {
         Section {
             Picker("Type", selection: $type) {
-                ForEach(TransactionType.allCases, id: \.self) { t in Text(t.label).tag(t) }
+                ForEach(TransactionType.allCases.filter { $0 != .transfer }, id: \.self) { t in Text(t.label).tag(t) }
             }
             .pickerStyle(.segmented)
             .onChange(of: type) { _, _ in selectedCategoryId = nil }

@@ -376,9 +376,14 @@ struct OnboardingView: View {
     // MARK: - Finish
 
     private func finishOnboarding() {
-        // Save accounts
+        // Save accounts — preserve UUID so balance transaction links correctly
         storage.accounts = onboardingAccounts.map {
-            PaymentAccount(name: $0.name, type: $0.type, currencyCode: $0.currencyCode)
+            PaymentAccount(
+                id: $0.id,
+                name: $0.name,
+                type: $0.type,
+                currencyCode: $0.currencyCode
+            )
         }
 
         // Create initial balance transaction for the selected account

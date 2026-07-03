@@ -164,38 +164,41 @@ final class StorageManager {
               let sourceAcc = account(by: sourceAccountId),
               let destAcc = account(by: destAccountId) else { return }
 
-        let transferId = UUID()
+        guard let transferCat = categories.first(where: { $0.name == "Transfer" && $0.type == .expense }) else { return }
 
-        guard let expenseCat = categories.first(where: { $0.name == "Transfer" && $0.type == .expense }),
-              let incomeCat = categories.first(where: { $0.name == "Transfer" && $0.type == .income }) else { return }
-
-        // Expense from source
-        let out = Transaction(
+        let tx = Transaction(
             amount: amount,
-            type: .expense,
-            categoryId: expenseCat.id,
+            type: .transfer,
+            categoryId: transferCat.id,
             accountId: sourceAccountId,
+            destAccountId: destAccountId,
             currencyCode: sourceAcc.currencyCode,
-            note: note.isEmpty ? "Transfer to \(destAcc.name)" : note,
-            date: date,
-            transferId: transferId
+            note: note.isEmpty ? "\(sourceAcc.name) → \(destAcc.name)" : note,
+            date: date
         )
 
-        // Income to destination
-        let incoming = Transaction(
-            amount: amount,
-            type: .income,
-            categoryId: incomeCat.id,
-            accountId: destAccountId,
-            currencyCode: destAcc.currencyCode,
-            note: note.isEmpty ? "Transfer from \(sourceAcc.name)" : note,
-            date: date,
-            transferId: transferId
-        )
-
-        transactions.append(contentsOf: [out, incoming])
+        transactions.append(tx)
         transactions.sort { $0.date > $1.date }
         save()
+    }
+
+    // MARK: - Balance for Account (handles transfers)
+
+    func balance(forAccount accountId: UUID) -> Decimal {
+        var total: Decimal = 0
+        for tx in transactions {
+            if tx.type == .transfer {
+                if tx.accountId == accountId {
+                    total -= tx.amount
+                }
+                if tx.destAccountId == accountId {
+                    total += tx.amount
+                }
+            } else if tx.accountId == accountId {
+                total += (tx.type == .income ? tx.amount : -tx.amount)
+            }
+        }
+        return total
     }
 
     // MARK: - Export / Import
@@ -251,13 +254,6 @@ final class StorageManager {
     func setInitialBalance(_ value: Decimal) {
         initialBalance = value
         save()
-    }
-
-    func balance(forAccount accountId: UUID) -> Decimal {
-        let accountTxs = transactions.filter { $0.accountId == accountId }
-        let income = accountTxs.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
-        let expense = accountTxs.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-        return income - expense
     }
 
     func expenseByCategory(for period: DateInterval? = nil) -> [(Category, Decimal)] {
