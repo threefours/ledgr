@@ -295,8 +295,8 @@ struct OnboardingView: View {
             Spacer()
         }
         .padding(.horizontal, 32)
-        .onAppear {
-            // Sync default accounts to the base currency chosen on previous page
+        .onChange(of: currentPage) { _, newPage in
+            guard newPage == 2 else { return }
             let cur = storage.baseCurrency
             onboardingAccounts = onboardingAccounts.map { acc in
                 var updated = acc
