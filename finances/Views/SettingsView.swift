@@ -111,6 +111,7 @@ struct SettingsView: View {
         storage.baseCurrency = "USD"
         storage.initialBalance = 0
         storage.save()
+        UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
     }
 }
 

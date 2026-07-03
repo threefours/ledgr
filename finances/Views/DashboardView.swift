@@ -172,48 +172,37 @@ struct DashboardView: View {
     @ViewBuilder
     private var accountsSection: some View {
         if !storage.accounts.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 sectionHeader("Accounts")
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(storage.accounts) { acc in
-                            let bal = storage.balance(forAccount: acc.id)
+                ForEach(storage.accounts.prefix(3)) { acc in
+                    let bal = storage.balance(forAccount: acc.id)
 
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: acc.icon)
-                                        .font(.system(size: 13, weight: .medium))
-                                        .foregroundStyle(.blue)
-                                        .frame(width: 28, height: 28)
-                                        .background(Color.blue.opacity(0.1))
-                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                    HStack(spacing: 12) {
+                        Image(systemName: acc.icon)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.blue)
+                            .frame(width: 40, height: 40)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
 
-                                    Spacer()
-
-                                    Text(acc.currencyCode)
-                                        .font(.caption2.weight(.medium))
-                                        .foregroundStyle(.secondary)
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color(.systemGray6))
-                                        .clipShape(Capsule())
-                                }
-
-                                Text(acc.name)
-                                    .font(.subheadline.weight(.semibold))
-
-                                Text(CurrencyFormatter.format(bal, currencyCode: acc.currencyCode))
-                                    .font(.system(size: 15, weight: .bold, design: .rounded))
-                                    .foregroundStyle(bal >= 0 ? .green : .red)
-                            }
-                            .padding(12)
-                            .frame(width: 145)
-                            .background(.background)
-                            .clipShape(RoundedRectangle(cornerRadius: 14))
-                            .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(acc.name)
+                                .font(.subheadline.weight(.semibold))
+                            Text("\(acc.type.label) · \(acc.currencyCode)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
+
+                        Spacer()
+
+                        Text(CurrencyFormatter.format(bal, currencyCode: acc.currencyCode))
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(bal >= 0 ? .green : .red)
                     }
+                    .padding(14)
+                    .background(.background)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
             }
         }
