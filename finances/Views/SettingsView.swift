@@ -1,10 +1,9 @@
 import SwiftUI
-import UIKit
 
 struct SettingsView: View {
     @Environment(StorageManager.self) private var storage
     @State private var showResetConfirm = false
-    @State private var showExport = false
+    @State private var showDataManagement = false
 
     var body: some View {
         NavigationStack {
@@ -61,9 +60,9 @@ struct SettingsView: View {
                 // Data Management
                 Section("Data") {
                     Button {
-                        showExport = true
+                        showDataManagement = true
                     } label: {
-                        Label("Export Data", systemImage: "square.and.arrow.up")
+                        Label("Import & Export", systemImage: "arrow.triangle.swap")
                     }
 
                     Button(role: .destructive) {
@@ -99,8 +98,8 @@ struct SettingsView: View {
             } message: {
                 Text("This will delete all transactions, categories, and accounts. This action cannot be undone.")
             }
-            .sheet(isPresented: $showExport) {
-                ExportView()
+            .sheet(isPresented: $showDataManagement) {
+                DataManagementView()
             }
         }
     }
@@ -110,78 +109,8 @@ struct SettingsView: View {
         storage.categories = Category.allDefaults
         storage.accounts = PaymentAccount.defaults
         storage.baseCurrency = "USD"
+        storage.initialBalance = 0
         storage.save()
-    }
-}
-
-// MARK: - Export View
-
-struct ExportView: View {
-    @Environment(StorageManager.self) private var storage
-    @Environment(\.dismiss) private var dismiss
-
-    @State private var exportText = ""
-    @State private var copied = false
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                Text(exportText)
-                    .font(.system(.caption, design: .monospaced))
-                    .padding()
-                    .textSelection(.enabled)
-            }
-            .navigationTitle("Export")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        UIPasteboard.general.string = exportText
-                        copied = true
-                    } label: {
-                        Text(copied ? "Copied!" : "Copy")
-                    }
-                    .disabled(copied)
-                }
-            }
-            .onAppear {
-                generateExport()
-            }
-        }
-    }
-
-    private func generateExport() {
-        var lines: [String] = []
-        lines.append("Ledgr Export")
-        lines.append("Date: \(Date().formatted())")
-        lines.append("Base Currency: \(storage.baseCurrency)")
-        lines.append("")
-        lines.append("--- Transactions ---")
-        lines.append("Date,Type,Category,Account,Amount,Currency,Note")
-
-        for tx in storage.transactions {
-            let catName = storage.category(by: tx.categoryId)?.name ?? "Unknown"
-            let accName = storage.account(by: tx.accountId)?.name ?? "Unknown"
-            let dateStr = tx.date.formatted(.dateTime.year().month().day())
-            lines.append("\(dateStr),\(tx.type.rawValue),\(catName),\(accName),\(tx.amount),\(tx.currencyCode),\(tx.note)")
-        }
-
-        lines.append("")
-        lines.append("--- Categories ---")
-        for cat in storage.categories {
-            lines.append("\(cat.name) [\(cat.type.rawValue)]")
-        }
-
-        lines.append("")
-        lines.append("--- Accounts ---")
-        for acc in storage.accounts {
-            lines.append("\(acc.name) (\(acc.type.label)) — \(acc.currencyCode)")
-        }
-
-        exportText = lines.joined(separator: "\n")
     }
 }
 

@@ -9,13 +9,12 @@ struct AddAccountView: View {
     @State private var name = ""
     @State private var type: AccountType = .bankCard
     @State private var currencyCode = "USD"
-    @State private var customIcon: String?
 
     private let iconOptions: [String] = [
         "creditcard", "banknote", "building.columns", "bitcoinsign.circle",
         "wallet.bifold", "lock.aisle", "giftcard", "dollarsign.circle",
         "eurosign.circle", "sterlingsign.circle", "yensign.circle",
-        "bitcoinsign.circle.fill", "ethereum.circle",
+        "bitcoinsign.circle.fill",
     ]
 
     init(editing: PaymentAccount? = nil) {
@@ -31,13 +30,14 @@ struct AddAccountView: View {
 
                 Section("Type") {
                     ForEach(AccountType.allCases, id: \.self) { t in
-                        Button {
-                            type = t
-                        } label: {
-                            HStack {
+                        Button { type = t } label: {
+                            HStack(spacing: 10) {
                                 Image(systemName: t.icon)
+                                    .font(.system(size: 15))
                                     .foregroundStyle(.blue)
-                                    .frame(width: 24)
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.blue.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
 
                                 Text(t.label)
                                     .foregroundStyle(.primary)
@@ -56,60 +56,37 @@ struct AddAccountView: View {
                 Section("Currency") {
                     Picker("Currency", selection: $currencyCode) {
                         ForEach(Currency.available) { c in
-                            Text("\(c.code) — \(c.symbol) \(c.name)").tag(c.code)
+                            Text("\(c.symbol)  \(c.code)  ·  \(c.name)").tag(c.code)
                         }
                     }
                 }
 
                 Section("Icon") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 16) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
                         ForEach(iconOptions, id: \.self) { ic in
-                            Button {
-                                customIcon = ic
-                            } label: {
+                            Button { } label: {
                                 Image(systemName: ic)
-                                    .font(.system(size: 22))
-                                    .foregroundStyle((customIcon ?? type.icon) == ic ? .white : .secondary)
-                                    .frame(width: 40, height: 40)
+                                    .font(.system(size: 20))
+                                    .foregroundStyle(type.icon == ic ? .white : .secondary)
+                                    .frame(width: 38, height: 38)
                                     .background(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill((customIcon ?? type.icon) == ic ? Color.blue : Color.clear)
+                                        RoundedRectangle(cornerRadius: 9)
+                                            .fill(type.icon == ic ? Color.blue : Color(.systemGray6))
                                     )
+                            }
+                            .buttonStyle(.plain)
+                            .onTapGesture {
+                                type = AccountType.allCases.first { $0.icon == ic } ?? type
                             }
                         }
                     }
                     .padding(.vertical, 4)
                 }
-
-                Section("Preview") {
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 8) {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.blue.opacity(0.15))
-                                    .frame(width: 64, height: 64)
-                                Image(systemName: customIcon ?? type.icon)
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(.blue)
-                            }
-                            Text(name.isEmpty ? "Account" : name)
-                                .font(.headline)
-                            Text(type.label)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
-                    .padding()
-                }
             }
             .navigationTitle(editing == nil ? "New Account" : "Edit Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -120,14 +97,8 @@ struct AddAccountView: View {
                     name = editing.name
                     type = editing.type
                     currencyCode = editing.currencyCode
-                    customIcon = editing.icon
                 } else {
                     currencyCode = storage.baseCurrency
-                }
-            }
-            .onChange(of: type) {
-                if customIcon == nil || iconOptions.contains(customIcon!) {
-                    // Keep custom if it was explicitly picked
                 }
             }
         }
@@ -142,15 +113,10 @@ struct AddAccountView: View {
             updated.name = trimmed
             updated.type = type
             updated.currencyCode = currencyCode
-            updated.icon = customIcon ?? type.icon
+            updated.icon = type.icon
             storage.updateAccount(updated)
         } else {
-            let acc = PaymentAccount(
-                name: trimmed,
-                type: type,
-                currencyCode: currencyCode,
-                icon: customIcon
-            )
+            let acc = PaymentAccount(name: trimmed, type: type, currencyCode: currencyCode)
             storage.addAccount(acc)
         }
         dismiss()

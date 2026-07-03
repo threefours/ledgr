@@ -8,13 +8,15 @@ struct AppData: Codable {
     var categories: [Category]
     var accounts: [PaymentAccount]
     var baseCurrency: String
+    var initialBalance: Decimal
 
     static var empty: AppData {
         AppData(
             transactions: [],
             categories: Category.allDefaults,
             accounts: PaymentAccount.defaults,
-            baseCurrency: "USD"
+            baseCurrency: "USD",
+            initialBalance: 0
         )
     }
 }
@@ -27,6 +29,7 @@ final class StorageManager {
     var categories: [Category] = []
     var accounts: [PaymentAccount] = []
     var baseCurrency: String = "USD"
+    var initialBalance: Decimal = 0
 
     private let fileName = "ledgr_data.json"
 
@@ -52,6 +55,7 @@ final class StorageManager {
             self.categories = defaults.categories
             self.accounts = defaults.accounts
             self.baseCurrency = defaults.baseCurrency
+            self.initialBalance = defaults.initialBalance
             save()
             return
         }
@@ -59,6 +63,7 @@ final class StorageManager {
         self.categories = decoded.categories
         self.accounts = decoded.accounts
         self.baseCurrency = decoded.baseCurrency
+        self.initialBalance = decoded.initialBalance
     }
 
     func save() {
@@ -66,7 +71,8 @@ final class StorageManager {
             transactions: transactions,
             categories: categories,
             accounts: accounts,
-            baseCurrency: baseCurrency
+            baseCurrency: baseCurrency,
+            initialBalance: initialBalance
         )
         guard let encoded = try? JSONEncoder().encode(data) else { return }
         try? encoded.write(to: fileURL)
@@ -145,6 +151,29 @@ final class StorageManager {
         accounts.first { $0.id == id }
     }
 
+    // MARK: - Export / Import
+
+    func exportData() -> Data? {
+        let data = AppData(
+            transactions: transactions,
+            categories: categories,
+            accounts: accounts,
+            baseCurrency: baseCurrency,
+            initialBalance: initialBalance
+        )
+        return try? JSONEncoder().encode(data)
+    }
+
+    func importData(from jsonData: Data) throws {
+        let decoded = try JSONDecoder().decode(AppData.self, from: jsonData)
+        self.transactions = decoded.transactions
+        self.categories = decoded.categories
+        self.accounts = decoded.accounts
+        self.baseCurrency = decoded.baseCurrency
+        self.initialBalance = decoded.initialBalance
+        save()
+    }
+
     // MARK: - Currency
 
     func setBaseCurrency(_ code: String) {
@@ -169,7 +198,12 @@ final class StorageManager {
     }
 
     func balance(for period: DateInterval? = nil) -> Decimal {
-        totalIncome(for: period) - totalExpense(for: period)
+        initialBalance + totalIncome(for: period) - totalExpense(for: period)
+    }
+
+    func setInitialBalance(_ value: Decimal) {
+        initialBalance = value
+        save()
     }
 
     func balance(forAccount accountId: UUID) -> Decimal {

@@ -11,24 +11,22 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 16) {
                     balanceCard
-                    monthSummary
-                    categoryBreakdown
-                    accountsOverview
-                    recentTransactionsList
+                    categorySection
+                    accountsSection
+                    recentSection
                 }
-                .padding()
+                .padding(16)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Ledgr")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showingAddTransaction = true
-                    } label: {
+                    Button { showingAddTransaction = true } label: {
                         Image(systemName: "plus.circle.fill")
                             .font(.title3)
+                            .foregroundStyle(.green)
                     }
                 }
             }
@@ -42,134 +40,123 @@ struct DashboardView: View {
 
     private var balanceCard: some View {
         let bal = storage.balance()
-
-        return VStack(spacing: 12) {
-            Image(systemName: "dollarsign.circle.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(.white.opacity(0.8))
-
-            Text("Total Balance")
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.8))
-
-            Text(CurrencyFormatter.format(bal, currencyCode: storage.baseCurrency))
-                .font(.system(size: 38, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
-        .background(
-            LinearGradient(
-                colors: bal >= 0
-                    ? [Color(hex: "#2ECC71"), Color(hex: "#27AE60")]
-                    : [Color(hex: "#E74C3C"), Color(hex: "#C0392B")],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: (bal >= 0 ? Color.green : Color.red).opacity(0.3), radius: 12, y: 6)
-    }
-
-    // MARK: - Month Summary
-
-    private var monthSummary: some View {
         let month = storage.thisMonth()
         let income = storage.totalIncome(for: month)
         let expense = storage.totalExpense(for: month)
 
-        return HStack(spacing: 12) {
-            summaryTile(
-                title: "Income",
-                amount: income,
-                icon: "arrow.down.circle.fill",
-                color: .green,
-                bgColor: Color.green.opacity(0.1)
-            )
-
-            summaryTile(
-                title: "Expenses",
-                amount: expense,
-                icon: "arrow.up.circle.fill",
-                color: .red,
-                bgColor: Color.red.opacity(0.1)
-            )
-        }
-    }
-
-    private func summaryTile(title: String, amount: Decimal, icon: String, color: Color, bgColor: Color) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundStyle(color)
-                    .font(.system(size: 16))
-                Text(title)
-                    .font(.caption.weight(.medium))
+        return VStack(spacing: 0) {
+            // Top section: balance
+            VStack(spacing: 6) {
+                Text("Current Balance")
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
                     .foregroundStyle(.secondary)
-            }
 
-            Text(CurrencyFormatter.format(amount, currencyCode: storage.baseCurrency))
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(color)
+                Text(CurrencyFormatter.format(bal, currencyCode: storage.baseCurrency))
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundStyle(bal >= 0 ? Color.green : Color.red)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 24)
+
+            Divider()
+                .padding(.horizontal, 20)
+
+            // Bottom: income / expense
+            HStack(spacing: 0) {
+                // Income
+                VStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.green)
+                        Text("Income")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(CurrencyFormatter.formatShort(income, currencyCode: storage.baseCurrency))
+                        .font(.callout.weight(.bold))
+                        .foregroundStyle(.green)
+                }
+                .frame(maxWidth: .infinity)
+
+                // Divider
+                Rectangle()
+                    .fill(Color(.separator))
+                    .frame(width: 1, height: 30)
+
+                // Expense
+                VStack(spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.red)
+                        Text("Expense")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(CurrencyFormatter.formatShort(expense, currencyCode: storage.baseCurrency))
+                        .font(.callout.weight(.bold))
+                        .foregroundStyle(.red)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 14)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(bgColor)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
     }
 
-    // MARK: - Category Breakdown
+    // MARK: - Summary Row
+
+    // MARK: - Category Section
 
     @ViewBuilder
-    private var categoryBreakdown: some View {
+    private var categorySection: some View {
         let expenses = storage.expenseByCategory(for: storage.thisMonth())
 
         if !expenses.isEmpty {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("This Month's Spending")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+            VStack(alignment: .leading, spacing: 12) {
+                sectionHeader("Spending by Category")
 
                 let totalExpense = expenses.reduce(0) { $0 + $1.1 }
 
-                ForEach(expenses.prefix(5), id: \.0.id) { category, total in
-                    VStack(spacing: 6) {
-                        HStack {
-                            ZStack {
-                                Circle()
-                                    .fill(category.color.opacity(0.15))
-                                    .frame(width: 32, height: 32)
-                                Image(systemName: category.icon)
-                                    .foregroundStyle(category.color)
-                                    .font(.system(size: 13))
+                ForEach(expenses.prefix(6), id: \.0.id) { cat, total in
+                    let pct = totalExpense > 0
+                        ? NSDecimalNumber(decimal: total / totalExpense).doubleValue
+                        : 0
+
+                    HStack(spacing: 10) {
+                        Image(systemName: cat.icon)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(cat.color)
+                            .frame(width: 28, height: 28)
+                            .background(cat.color.opacity(0.12))
+                            .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text(cat.name)
+                                    .font(.subheadline.weight(.medium))
+                                Spacer()
+                                Text(CurrencyFormatter.formatShort(total, currencyCode: storage.baseCurrency))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.secondary)
                             }
 
-                            Text(category.name)
-                                .font(.subheadline)
-
-                            Spacer()
-
-                            Text(CurrencyFormatter.format(total, currencyCode: storage.baseCurrency))
-                                .font(.subheadline.weight(.medium))
-                        }
-
-                        // Progress bar
-                        GeometryReader { geo in
-                            let pct = totalExpense > 0
-                                ? NSDecimalNumber(decimal: total / totalExpense).doubleValue
-                                : 0
-
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color(.systemGray5))
-                                    .frame(height: 6)
-
-                                RoundedRectangle(cornerRadius: 4)
-                                    .fill(category.color)
-                                    .frame(width: geo.size.width * pct, height: 6)
+                            GeometryReader { geo in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(Color(.systemGray5))
+                                        .frame(height: 4)
+                                    RoundedRectangle(cornerRadius: 2)
+                                        .fill(cat.color)
+                                        .frame(width: max(4, geo.size.width * pct), height: 4)
+                                }
                             }
+                            .frame(height: 4)
                         }
-                        .frame(height: 6)
                     }
                 }
             }
@@ -180,42 +167,51 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Accounts Overview
+    // MARK: - Accounts Section
 
     @ViewBuilder
-    private var accountsOverview: some View {
+    private var accountsSection: some View {
         if !storage.accounts.isEmpty {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("Accounts")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+            VStack(alignment: .leading, spacing: 12) {
+                sectionHeader("Accounts")
 
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         ForEach(storage.accounts) { acc in
                             let bal = storage.balance(forAccount: acc.id)
 
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
                                     Image(systemName: acc.icon)
+                                        .font(.system(size: 13, weight: .medium))
                                         .foregroundStyle(.blue)
-                                        .font(.system(size: 14))
-                                    Text(acc.type.label)
-                                        .font(.caption)
+                                        .frame(width: 28, height: 28)
+                                        .background(Color.blue.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                    Spacer()
+
+                                    Text(acc.currencyCode)
+                                        .font(.caption2.weight(.medium))
                                         .foregroundStyle(.secondary)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color(.systemGray6))
+                                        .clipShape(Capsule())
                                 }
 
                                 Text(acc.name)
-                                    .font(.subheadline.weight(.medium))
+                                    .font(.subheadline.weight(.semibold))
 
                                 Text(CurrencyFormatter.format(bal, currencyCode: acc.currencyCode))
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .font(.system(size: 15, weight: .bold, design: .rounded))
                                     .foregroundStyle(bal >= 0 ? .green : .red)
                             }
-                            .padding(14)
-                            .frame(width: 150)
-                            .background(Color(.systemGray6))
+                            .padding(12)
+                            .frame(width: 145)
+                            .background(.background)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
+                            .shadow(color: .black.opacity(0.04), radius: 6, y: 2)
                         }
                     }
                 }
@@ -223,53 +219,65 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Recent Transactions
+    // MARK: - Recent Section
 
-    private var recentTransactionsList: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    @ViewBuilder
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Recent")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-
+                sectionHeader("Recent")
                 Spacer()
-
                 NavigationLink("See All") {
                     TransactionListView()
                 }
-                .font(.subheadline)
+                .font(.subheadline.weight(.medium))
             }
 
             if recentTransactions.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "tray")
-                        .font(.system(size: 32))
+                VStack(spacing: 16) {
+                    Image(systemName: "chart.bar.xaxis")
+                        .font(.system(size: 36))
                         .foregroundStyle(.tertiary)
                     Text("No transactions yet")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Button("Add Your First Transaction") {
-                        showingAddTransaction = true
+                    Button { showingAddTransaction = true } label: {
+                        Text("Add Your First")
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.green)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
                     }
-                    .font(.subheadline.weight(.medium))
-                    .buttonStyle(.bordered)
-                    .tint(.green)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
+                .padding(.vertical, 24)
+                .background(.background)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
             } else {
-                ForEach(recentTransactions) { tx in
-                    TransactionRow(transaction: tx)
-                    if tx.id != recentTransactions.last?.id {
-                        Divider()
+                VStack(spacing: 0) {
+                    ForEach(Array(recentTransactions.enumerated()), id: \.element.id) { idx, tx in
+                        TransactionRow(transaction: tx)
+                        if idx < recentTransactions.count - 1 {
+                            Divider().padding(.leading, 56)
+                        }
                     }
                 }
+                .padding(16)
+                .background(.background)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
             }
         }
-        .padding(16)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+    }
+
+    // MARK: - Helpers
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.headline.weight(.semibold))
     }
 }
 
@@ -284,16 +292,14 @@ struct TransactionRow: View {
         let account = storage.account(by: transaction.accountId)
 
         HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill((category?.color ?? .gray).opacity(0.15))
-                    .frame(width: 42, height: 42)
-                Image(systemName: category?.icon ?? "questionmark")
-                    .foregroundStyle(category?.color ?? .gray)
-                    .font(.system(size: 16, weight: .medium))
-            }
+            Image(systemName: category?.icon ?? "questionmark")
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(category?.color ?? .gray)
+                .frame(width: 36, height: 36)
+                .background((category?.color ?? .gray).opacity(0.12))
+                .clipShape(Circle())
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(category?.name ?? "Unknown")
                     .font(.subheadline.weight(.medium))
 
@@ -306,7 +312,7 @@ struct TransactionRow: View {
                     if !transaction.note.isEmpty {
                         Text((account != nil ? "· " : "") + transaction.note)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tertiary)
                             .lineLimit(1)
                     }
                 }
@@ -314,7 +320,7 @@ struct TransactionRow: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .trailing, spacing: 2) {
                 let sign = transaction.type == .income ? "+" : "−"
                 Text("\(sign)\(CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode))")
                     .font(.subheadline.weight(.semibold))
@@ -325,7 +331,7 @@ struct TransactionRow: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 10)
     }
 }
 

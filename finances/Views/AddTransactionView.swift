@@ -18,165 +18,179 @@ struct AddTransactionView: View {
         self.editing = editing
     }
 
-    private var availableCategories: [Category] {
-        storage.categories(for: type)
-    }
-
+    private var availableCategories: [Category] { storage.categories(for: type) }
     private var isEditing: Bool { editing != nil }
 
     var body: some View {
         NavigationStack {
             Form {
-                // Type
-                Section("Type") {
-                    Picker("Type", selection: $type) {
-                        ForEach(TransactionType.allCases, id: \.self) { t in
-                            Text(t.label).tag(t)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: type) {
-                        selectedCategoryId = nil
-                    }
-                }
-
-                // Amount
-                Section("Amount") {
-                    HStack {
-                        Text(Currency.symbol(for: selectedCurrency))
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 30)
-
-                        TextField("0.00", text: $amountString)
-                            .keyboardType(.decimalPad)
-                            .font(.title2)
-                    }
-
-                    Picker("Currency", selection: $selectedCurrency) {
-                        ForEach(Currency.available) { c in
-                            Text("\(c.code) — \(c.symbol) \(c.name)").tag(c.code)
-                        }
-                    }
-                }
-
-                // Category
-                Section("Category") {
-                    if availableCategories.isEmpty {
-                        Text("No categories available for \(type.label.lowercased())")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(availableCategories) { cat in
-                            Button {
-                                selectedCategoryId = cat.id
-                            } label: {
-                                HStack(spacing: 10) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(cat.color.opacity(0.15))
-                                            .frame(width: 32, height: 32)
-                                        Image(systemName: cat.icon)
-                                            .foregroundStyle(cat.color)
-                                            .font(.system(size: 13))
-                                    }
-
-                                    Text(cat.name)
-                                        .foregroundStyle(.primary)
-
-                                    Spacer()
-
-                                    if selectedCategoryId == cat.id {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.green)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Account
-                Section("Account") {
-                    if storage.accounts.isEmpty {
-                        Text("No accounts available. Add one in the Accounts tab.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(storage.accounts) { acc in
-                            Button {
-                                selectedAccountId = acc.id
-                            } label: {
-                                HStack(spacing: 10) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .fill(Color.blue.opacity(0.1))
-                                            .frame(width: 32, height: 32)
-                                        Image(systemName: acc.icon)
-                                            .foregroundStyle(.blue)
-                                            .font(.system(size: 13))
-                                    }
-
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(acc.name)
-                                            .foregroundStyle(.primary)
-                                        Text(acc.type.label)
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                    }
-
-                                    Spacer()
-
-                                    if selectedAccountId == acc.id {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(.green)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Details
-                Section("Details") {
-                    DatePicker("Date", selection: $date, displayedComponents: .date)
-                    TextField("Note (optional)", text: $note)
-                }
+                typeSection
+                amountSection
+                categorySection
+                accountSection
+                detailsSection
             }
             .navigationTitle(isEditing ? "Edit Transaction" : "New Transaction")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isEditing ? "Update" : "Save") { save() }
-                        .disabled(!canSave)
+                    Button(isEditing ? "Update" : "Save") { save() }.disabled(!canSave)
                 }
             }
-            .onAppear {
-                if let editing {
-                    // Populate fields from existing transaction
-                    type = editing.type
-                    amountString = NSDecimalNumber(decimal: editing.amount).stringValue
-                    selectedCategoryId = editing.categoryId
-                    selectedAccountId = editing.accountId
-                    selectedCurrency = editing.currencyCode
-                    note = editing.note
-                    date = editing.date
-                } else {
-                    selectedCurrency = storage.baseCurrency
-                    if selectedAccountId == nil {
-                        selectedAccountId = storage.accounts.first?.id
+            .onAppear { populateFields() }
+        }
+    }
+
+    // MARK: - Sections
+
+    private var typeSection: some View {
+        Section {
+            Picker("Type", selection: $type) {
+                ForEach(TransactionType.allCases, id: \.self) { t in
+                    HStack {
+                        Image(systemName: t == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
+                            .foregroundStyle(t == .income ? .green : .red)
+                        Text(t.label)
+                    }
+                    .tag(t)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: type) { _, _ in selectedCategoryId = nil }
+        }
+    }
+
+    private var amountSection: some View {
+        Section("Amount") {
+            HStack {
+                Text(Currency.symbol(for: selectedCurrency))
+                    .font(.title3.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 28)
+
+                TextField("0.00", text: $amountString)
+                    .keyboardType(.decimalPad)
+                    .font(.system(size: 28, weight: .semibold, design: .rounded))
+            }
+            .padding(.vertical, 4)
+
+            Picker("Currency", selection: $selectedCurrency) {
+                ForEach(Currency.available) { c in
+                    Text("\(c.symbol)  \(c.code)  ·  \(c.name)").tag(c.code)
+                }
+            }
+        }
+    }
+
+    private var categorySection: some View {
+        Section("Category") {
+            if availableCategories.isEmpty {
+                HStack {
+                    Image(systemName: "square.grid.2x2")
+                        .foregroundStyle(.tertiary)
+                    Text("No categories — add one in the Categories tab")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(availableCategories) { cat in
+                    Button { selectedCategoryId = cat.id } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: cat.icon)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(cat.color)
+                                .frame(width: 30, height: 30)
+                                .background(cat.color.opacity(0.12))
+                                .clipShape(Circle())
+
+                            Text(cat.name)
+                                .foregroundStyle(.primary)
+
+                            Spacer()
+
+                            if selectedCategoryId == cat.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
+    private var accountSection: some View {
+        Section("Account") {
+            if storage.accounts.isEmpty {
+                HStack {
+                    Image(systemName: "creditcard")
+                        .foregroundStyle(.tertiary)
+                    Text("No accounts — add one in the Accounts tab")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                ForEach(storage.accounts) { acc in
+                    Button { selectedAccountId = acc.id } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: acc.icon)
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundStyle(.blue)
+                                .frame(width: 30, height: 30)
+                                .background(Color.blue.opacity(0.1))
+                                .clipShape(RoundedRectangle(cornerRadius: 7))
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(acc.name)
+                                    .foregroundStyle(.primary)
+                                Text(acc.type.label)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if selectedAccountId == acc.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var detailsSection: some View {
+        Section("Details") {
+            DatePicker("Date", selection: $date, displayedComponents: .date)
+            TextField("Note (optional)", text: $note)
+        }
+    }
+
+    // MARK: - Logic
+
     private var canSave: Bool {
         guard let amount = Decimal(string: amountString), amount > 0 else { return false }
         guard selectedCategoryId != nil else { return false }
         guard selectedAccountId != nil else { return false }
         return true
+    }
+
+    private func populateFields() {
+        if let editing {
+            type = editing.type
+            amountString = NSDecimalNumber(decimal: editing.amount).stringValue
+            selectedCategoryId = editing.categoryId
+            selectedAccountId = editing.accountId
+            selectedCurrency = editing.currencyCode
+            note = editing.note
+            date = editing.date
+        } else {
+            selectedCurrency = storage.baseCurrency
+            if selectedAccountId == nil { selectedAccountId = storage.accounts.first?.id }
+        }
     }
 
     private func save() {
