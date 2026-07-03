@@ -473,12 +473,12 @@ struct OnboardingAddAccountView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
-                        let trimmed = name.trimmingCharacters(in: .whitespaces)
+                        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !trimmed.isEmpty else { return }
                         onAdd(OnboardingAccount(name: trimmed, type: type, currencyCode: currencyCode))
                         dismiss()
                     }
-                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }

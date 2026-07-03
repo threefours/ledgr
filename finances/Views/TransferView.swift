@@ -128,9 +128,9 @@ struct TransferView: View {
               let to = toAccountId else { return }
 
         if let editing {
-            storage.updateTransfer(editing, amount: amount, from: from, to: to, date: date, note: note.trimmingCharacters(in: .whitespaces))
+            storage.updateTransfer(editing, amount: amount, from: from, to: to, date: date, note: note.trimmingCharacters(in: .whitespacesAndNewlines))
         } else {
-            storage.transfer(amount: amount, from: from, to: to, date: date, note: note.trimmingCharacters(in: .whitespaces))
+            storage.transfer(amount: amount, from: from, to: to, date: date, note: note.trimmingCharacters(in: .whitespacesAndNewlines))
         }
         dismiss()
     }

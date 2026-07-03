@@ -89,7 +89,7 @@ struct AddAccountView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
-                        .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .onAppear {
@@ -106,7 +106,7 @@ struct AddAccountView: View {
     }
 
     private func save() {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         let icon = customIcon ?? type.icon

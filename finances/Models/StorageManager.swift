@@ -23,6 +23,7 @@ struct AppData: Codable {
 
 // MARK: - Storage Manager
 
+@MainActor
 @Observable
 final class StorageManager {
     var transactions: [Transaction] = []
@@ -75,7 +76,9 @@ final class StorageManager {
             initialBalance: initialBalance
         )
         guard let encoded = try? JSONEncoder().encode(data) else { return }
-        try? encoded.write(to: fileURL)
+        let tempURL = fileURL.appendingPathExtension("tmp")
+        try? encoded.write(to: tempURL, options: .atomic)
+        _ = try? FileManager.default.replaceItemAt(fileURL, withItemAt: tempURL, backupItemName: nil, options: [])
     }
 
     // MARK: - Transactions
@@ -118,6 +121,7 @@ final class StorageManager {
 
     func deleteCategory(_ id: UUID) {
         categories.removeAll { $0.id == id }
+        transactions.removeAll { $0.categoryId == id }
         save()
     }
 
@@ -298,7 +302,7 @@ final class StorageManager {
     }
 
     func transactions(forAccount accountId: UUID) -> [Transaction] {
-        transactions.filter { $0.accountId == accountId }
+        transactions.filter { $0.accountId == accountId || $0.destAccountId == accountId }
     }
 
     // MARK: - Date Helpers
@@ -307,15 +311,10 @@ final class StorageManager {
         let cal = Calendar.current
         let now = Date()
         let start = cal.date(from: cal.dateComponents([.year, .month], from: now))!
-        let end = cal.date(byAdding: DateComponents(month: 1, day: -1), to: start)!
-        return DateInterval(start: start, end: cal.startOfDay(for: end).addingTimeInterval(86399))
+        guard let end = cal.date(byAdding: DateComponents(month: 1, second: -1), to: start) else {
+            return DateInterval(start: start, end: now)
+        }
+        return DateInterval(start: start, end: end)
     }
 
-    func thisWeek() -> DateInterval {
-        let cal = Calendar.current
-        let now = Date()
-        let start = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
-        let end = cal.date(byAdding: .day, value: 6, to: start)!
-        return DateInterval(start: start, end: cal.startOfDay(for: end).addingTimeInterval(86399))
-    }
 }

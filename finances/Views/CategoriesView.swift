@@ -5,6 +5,7 @@ struct CategoriesView: View {
     @State private var showingAdd = false
     @State private var selectedType: TransactionType = .expense
     @State private var editingCategory: Category?
+    @State private var categoryToDelete: Category?
 
     private var filtered: [Category] { storage.categories(for: selectedType) }
 
@@ -63,7 +64,9 @@ struct CategoriesView: View {
                             }
                         }
                         .onDelete { offsets in
-                            for idx in offsets { storage.deleteCategory(filtered[idx].id) }
+                            if let idx = offsets.first {
+                                categoryToDelete = filtered[idx]
+                            }
                         }
                     }
                 }
@@ -81,6 +84,27 @@ struct CategoriesView: View {
             }
             .sheet(isPresented: $showingAdd) { AddCategoryView(presetType: selectedType) }
             .sheet(item: $editingCategory) { cat in AddCategoryView(editing: cat) }
+            .confirmationDialog(
+                "Delete Category?",
+                isPresented: Binding(
+                    get: { categoryToDelete != nil },
+                    set: { if !$0 { categoryToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete Category & Transactions", role: .destructive) {
+                    if let cat = categoryToDelete {
+                        storage.deleteCategory(cat.id)
+                    }
+                    categoryToDelete = nil
+                }
+                Button("Cancel", role: .cancel) { categoryToDelete = nil }
+            } message: {
+                if let cat = categoryToDelete {
+                    let count = storage.transactions.filter { $0.categoryId == cat.id }.count
+                    Text("This will permanently delete \"\(cat.name)\" and all \(count) linked transactions. This action cannot be undone.")
+                }
+            }
         }
     }
 }

@@ -9,6 +9,7 @@ struct DataManagementView: View {
     @State private var showImporter = false
     @State private var exportData: Data?
     @State private var importError: String?
+    @State private var showImportError = false
     @State private var showImportConfirm = false
     @State private var pendingImportData: Data?
     @State private var importPreview: ImportPreview?
@@ -69,6 +70,7 @@ struct DataManagementView: View {
             ) { result in
                 if case .failure(let error) = result {
                     importError = error.localizedDescription
+                    showImportError = true
                 }
             }
             .fileImporter(
@@ -88,14 +90,16 @@ struct DataManagementView: View {
                                 showImportConfirm = true
                             } else {
                                 importError = "Invalid Ledgr backup file."
+                                showImportError = true
                             }
                         }
                     }
                 case .failure(let error):
                     importError = error.localizedDescription
+                    showImportError = true
                 }
             }
-            .alert("Import Error", isPresented: .constant(importError != nil)) {
+            .alert("Import Error", isPresented: $showImportError) {
                 Button("OK") { importError = nil }
             } message: {
                 Text(importError ?? "")
@@ -151,6 +155,7 @@ struct DataManagementView: View {
             try storage.importData(from: data)
         } catch {
             importError = error.localizedDescription
+            showImportError = true
         }
         pendingImportData = nil
         importPreview = nil

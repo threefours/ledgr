@@ -28,7 +28,6 @@ struct Transaction: Codable, Identifiable, Equatable {
     var currencyCode: String
     var note: String
     var date: Date
-    var transferId: UUID?
 
     init(
         id: UUID = UUID(),
@@ -39,8 +38,7 @@ struct Transaction: Codable, Identifiable, Equatable {
         destAccountId: UUID? = nil,
         currencyCode: String,
         note: String = "",
-        date: Date = Date(),
-        transferId: UUID? = nil
+        date: Date = Date()
     ) {
         self.id = id
         self.amount = amount
@@ -51,7 +49,6 @@ struct Transaction: Codable, Identifiable, Equatable {
         self.currencyCode = currencyCode
         self.note = note
         self.date = date
-        self.transferId = transferId
     }
 
     var isTransfer: Bool { type == .transfer }

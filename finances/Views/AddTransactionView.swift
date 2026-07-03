@@ -217,7 +217,7 @@ struct AddTransactionView: View {
             updated.categoryId = catId
             updated.accountId = accId
             updated.currencyCode = currency
-            updated.note = note.trimmingCharacters(in: .whitespaces)
+            updated.note = note.trimmingCharacters(in: .whitespacesAndNewlines)
             updated.date = date
             storage.updateTransaction(updated)
         } else {
@@ -227,7 +227,7 @@ struct AddTransactionView: View {
                 categoryId: catId,
                 accountId: accId,
                 currencyCode: currency,
-                note: note.trimmingCharacters(in: .whitespaces),
+                note: note.trimmingCharacters(in: .whitespacesAndNewlines),
                 date: date
             )
             storage.addTransaction(tx)
