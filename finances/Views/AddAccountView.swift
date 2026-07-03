@@ -9,16 +9,21 @@ struct AddAccountView: View {
     @State private var name = ""
     @State private var type: AccountType = .bankCard
     @State private var currencyCode = "USD"
+    @State private var customIcon: String?
 
     private let iconOptions: [String] = [
         "creditcard", "banknote", "building.columns", "bitcoinsign.circle",
         "wallet.bifold", "lock.aisle", "giftcard", "dollarsign.circle",
         "eurosign.circle", "sterlingsign.circle", "yensign.circle",
-        "bitcoinsign.circle.fill",
+        "rublesign.circle",
     ]
 
     init(editing: PaymentAccount? = nil) {
         self.editing = editing
+    }
+
+    private var selectedIcon: String {
+        customIcon ?? type.icon
     }
 
     var body: some View {
@@ -64,20 +69,15 @@ struct AddAccountView: View {
                 Section("Icon") {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
                         ForEach(iconOptions, id: \.self) { ic in
-                            Button { } label: {
-                                Image(systemName: ic)
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(type.icon == ic ? .white : .secondary)
-                                    .frame(width: 38, height: 38)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 9)
-                                            .fill(type.icon == ic ? Color.blue : Color(.systemGray6))
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .onTapGesture {
-                                type = AccountType.allCases.first { $0.icon == ic } ?? type
-                            }
+                            Image(systemName: ic)
+                                .font(.system(size: 20))
+                                .foregroundStyle(selectedIcon == ic ? .white : .secondary)
+                                .frame(width: 38, height: 38)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 9)
+                                        .fill(selectedIcon == ic ? Color.blue : Color(.systemGray6))
+                                )
+                                .onTapGesture { customIcon = ic }
                         }
                     }
                     .padding(.vertical, 4)
@@ -97,6 +97,7 @@ struct AddAccountView: View {
                     name = editing.name
                     type = editing.type
                     currencyCode = editing.currencyCode
+                    customIcon = editing.icon != editing.type.icon ? editing.icon : nil
                 } else {
                     currencyCode = storage.baseCurrency
                 }
@@ -108,15 +109,17 @@ struct AddAccountView: View {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
 
+        let icon = customIcon ?? type.icon
+
         if let editing {
             var updated = editing
             updated.name = trimmed
             updated.type = type
             updated.currencyCode = currencyCode
-            updated.icon = type.icon
+            updated.icon = icon
             storage.updateAccount(updated)
         } else {
-            let acc = PaymentAccount(name: trimmed, type: type, currencyCode: currencyCode)
+            let acc = PaymentAccount(name: trimmed, type: type, currencyCode: currencyCode, icon: icon)
             storage.addAccount(acc)
         }
         dismiss()
