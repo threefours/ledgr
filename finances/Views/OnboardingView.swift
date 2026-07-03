@@ -32,12 +32,12 @@ struct OnboardingView: View {
             }
             .padding(.top, 20)
 
-            // Pages — accounts BEFORE balance so user can pick where money goes
+            // Pages — currency first, then accounts, then balance
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
-                accountsPage.tag(1)
-                balancePage.tag(2)
-                currencyPage.tag(3)
+                currencyPage.tag(1)
+                accountsPage.tag(2)
+                balancePage.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .animation(.easeInOut, value: currentPage)
@@ -75,15 +75,8 @@ struct OnboardingView: View {
             .padding(.bottom, 36)
         }
         .sheet(isPresented: $showingAddAccount) {
-            OnboardingAddAccountView(defaultCurrency: balanceCurrency) { account in
+            OnboardingAddAccountView(defaultCurrency: storage.baseCurrency) { account in
                 onboardingAccounts.append(account)
-            }
-        }
-        .onChange(of: balanceCurrency) { _, newValue in
-            onboardingAccounts = onboardingAccounts.map { acc in
-                var updated = acc
-                updated.currencyCode = newValue
-                return updated
             }
         }
     }
@@ -303,6 +296,15 @@ struct OnboardingView: View {
             Spacer()
         }
         .padding(.horizontal, 32)
+        .onAppear {
+            // Sync default accounts to the base currency chosen on previous page
+            let cur = storage.baseCurrency
+            onboardingAccounts = onboardingAccounts.map { acc in
+                var updated = acc
+                updated.currencyCode = cur
+                return updated
+            }
+        }
     }
 
     // MARK: - Page 4: Base Currency
