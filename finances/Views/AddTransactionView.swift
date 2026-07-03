@@ -12,6 +12,7 @@ struct AddTransactionView: View {
     @State private var selectedAccountId: UUID?
     @State private var note = ""
     @State private var date = Date()
+    @State private var isPopulating = false
 
     init(editing: Transaction? = nil) {
         self.editing = editing
@@ -56,7 +57,10 @@ struct AddTransactionView: View {
                 ForEach(TransactionType.allCases.filter { $0 != .transfer }, id: \.self) { t in Text(t.label).tag(t) }
             }
             .pickerStyle(.segmented)
-            .onChange(of: type) { _, _ in selectedCategoryId = nil }
+            .onChange(of: type) { _, _ in
+                guard !isPopulating else { return }
+                selectedCategoryId = nil
+            }
         }
     }
 
@@ -185,6 +189,7 @@ struct AddTransactionView: View {
     }
 
     private func populateFields() {
+        isPopulating = true
         if let editing {
             type = editing.type
             amountString = NSDecimalNumber(decimal: editing.amount).stringValue
@@ -195,6 +200,7 @@ struct AddTransactionView: View {
         } else {
             if selectedAccountId == nil { selectedAccountId = storage.accounts.first?.id }
         }
+        isPopulating = false
     }
 
     private func save() {
