@@ -5,7 +5,7 @@ struct DashboardView: View {
     @State private var showingAddTransaction = false
 
     private var recentTransactions: [Transaction] {
-        Array(storage.transactions.prefix(5))
+        Array(storage.transactions.prefix(2))
     }
 
     var body: some View {
@@ -213,14 +213,7 @@ struct DashboardView: View {
     @ViewBuilder
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                sectionHeader("Recent")
-                Spacer()
-                NavigationLink("See All") {
-                    TransactionListView()
-                }
-                .font(.subheadline.weight(.medium))
-            }
+            sectionHeader("Recent")
 
             if recentTransactions.isEmpty {
                 VStack(spacing: 16) {
