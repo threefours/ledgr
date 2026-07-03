@@ -48,12 +48,7 @@ struct AddTransactionView: View {
         Section {
             Picker("Type", selection: $type) {
                 ForEach(TransactionType.allCases, id: \.self) { t in
-                    HStack {
-                        Image(systemName: t == .income ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                            .foregroundStyle(t == .income ? .green : .red)
-                        Text(t.label)
-                    }
-                    .tag(t)
+                    Text(t.label).tag(t)
                 }
             }
             .pickerStyle(.segmented)
