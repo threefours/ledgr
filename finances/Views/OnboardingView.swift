@@ -8,7 +8,6 @@ struct OnboardingView: View {
 
     @State private var currentPage = 0
     @State private var balanceString = ""
-    @State private var balanceCurrency = "USD"
     @State private var onboardingAccounts: [OnboardingAccount] = [
         OnboardingAccount(name: "Cash", type: .cash, currencyCode: "USD"),
         OnboardingAccount(name: "Main Card", type: .bankCard, currencyCode: "USD"),
@@ -110,7 +109,7 @@ struct OnboardingView: View {
         .padding(.horizontal, 32)
     }
 
-    // MARK: - Page 3: Initial Balance
+    // MARK: - Starting Balance
 
     private var selectedAccountCurrency: String {
         if let id = selectedBalanceAccountId,
@@ -220,7 +219,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Page 2: Accounts
+    // MARK: - Accounts
 
     private var accountsPage: some View {
         VStack(spacing: 20) {
@@ -307,7 +306,7 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Page 4: Base Currency
+    // MARK: - Base Currency
 
     private var currencyPage: some View {
         VStack(spacing: 24) {

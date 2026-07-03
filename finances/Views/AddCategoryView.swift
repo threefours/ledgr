@@ -45,7 +45,7 @@ struct AddCategoryView: View {
 
                 Section("Type") {
                     Picker("Type", selection: $type) {
-                        ForEach(TransactionType.allCases, id: \.self) { t in
+                        ForEach(TransactionType.allCases.filter { $0 != .transfer }, id: \.self) { t in
                             Text(t.label).tag(t)
                         }
                     }
