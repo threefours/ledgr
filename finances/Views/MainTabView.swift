@@ -6,11 +6,11 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Tab("Dashboard", systemImage: "chart.pie.fill", value: 0) {
+            Tab("Home", systemImage: "chart.pie.fill", value: 0) {
                 DashboardView()
             }
 
-            Tab("Transactions", systemImage: "list.bullet.rectangle.fill", value: 1) {
+            Tab("History", systemImage: "list.bullet.rectangle.fill", value: 1) {
                 TransactionListView()
             }
 
