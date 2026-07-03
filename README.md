@@ -70,4 +70,4 @@ pull requests are welcome. a few ground rules:
 
 ## license
 
-mit — do whatever you want.
+gpl v3 — free software, keep it open.
