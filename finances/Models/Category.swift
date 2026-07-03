@@ -44,7 +44,8 @@ extension Category {
     ]
 
     static let defaultIncome: [Category] = [
-        Category(name: "Salary", icon: "banknote.fill", colorHex: "#2ECC71", type: .income),
+        Category(name: "Opening Balance", icon: "banknote.fill", colorHex: "#2ECC71", type: .income),
+        Category(name: "Salary", icon: "dollarsign.circle.fill", colorHex: "#27AE60", type: .income),
         Category(name: "Freelance", icon: "laptopcomputer", colorHex: "#3498DB", type: .income),
         Category(name: "Investments", icon: "chart.line.uptrend.xyaxis", colorHex: "#9B59B6", type: .income),
         Category(name: "Gifts", icon: "gift.fill", colorHex: "#E74C3C", type: .income),

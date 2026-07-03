@@ -15,6 +15,7 @@ struct OnboardingView: View {
     ]
     @State private var showingAddAccount = false
     @FocusState private var balanceFocused: Bool
+    @State private var selectedBalanceAccountId: UUID?
 
     private let totalPages = 4
 
@@ -31,11 +32,11 @@ struct OnboardingView: View {
             }
             .padding(.top, 20)
 
-            // Pages
+            // Pages — accounts BEFORE balance so user can pick where money goes
             TabView(selection: $currentPage) {
                 welcomePage.tag(0)
-                balancePage.tag(1)
-                accountsPage.tag(2)
+                accountsPage.tag(1)
+                balancePage.tag(2)
                 currencyPage.tag(3)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
@@ -116,7 +117,15 @@ struct OnboardingView: View {
         .padding(.horizontal, 32)
     }
 
-    // MARK: - Page 2: Initial Balance
+    // MARK: - Page 3: Initial Balance
+
+    private var selectedAccountCurrency: String {
+        if let id = selectedBalanceAccountId,
+           let acc = onboardingAccounts.first(where: { $0.id == id }) {
+            return acc.currencyCode
+        }
+        return onboardingAccounts.first?.currencyCode ?? "USD"
+    }
 
     private var balancePage: some View {
         VStack(spacing: 24) {
@@ -135,14 +144,15 @@ struct OnboardingView: View {
             Text("Starting Balance")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
 
-            Text("Enter your current balance\nto start tracking from where you are")
+            Text("Enter your current balance.\nIt will be credited to the selected account.")
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
+                // Amount
                 HStack(spacing: 8) {
-                    Text(Currency.symbol(for: balanceCurrency))
+                    Text(Currency.symbol(for: selectedAccountCurrency))
                         .font(.title2)
                         .foregroundStyle(.secondary)
 
@@ -154,14 +164,54 @@ struct OnboardingView: View {
                         .frame(maxWidth: 200)
                 }
 
-                Picker("Currency", selection: $balanceCurrency) {
-                    ForEach(Currency.popular) { c in
-                        Text("\(c.code)").tag(c.code)
+                Divider()
+
+                // Account picker
+                VStack(spacing: 8) {
+                    Text("Credited to")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    ForEach(onboardingAccounts) { acc in
+                        Button {
+                            selectedBalanceAccountId = acc.id
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: acc.type.icon)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.blue)
+                                    .frame(width: 28, height: 28)
+                                    .background(Color.blue.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 7))
+
+                                Text(acc.name)
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundStyle(.primary)
+
+                                Text("· \(acc.currencyCode)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                Spacer()
+
+                                if selectedBalanceAccountId == acc.id {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(selectedBalanceAccountId == acc.id
+                                        ? Color.green.opacity(0.08)
+                                        : Color(.systemGray6))
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.menu)
             }
-            .padding(20)
+            .padding(16)
             .background(Color(.systemGray6))
             .clipShape(RoundedRectangle(cornerRadius: 16))
 
@@ -169,12 +219,15 @@ struct OnboardingView: View {
         }
         .padding(.horizontal, 32)
         .contentShape(Rectangle())
-        .onTapGesture {
-            balanceFocused = false
+        .onTapGesture { balanceFocused = false }
+        .onAppear {
+            if selectedBalanceAccountId == nil {
+                selectedBalanceAccountId = onboardingAccounts.first?.id
+            }
         }
     }
 
-    // MARK: - Page 3: Accounts
+    // MARK: - Page 2: Accounts
 
     private var accountsPage: some View {
         VStack(spacing: 20) {
@@ -321,19 +374,27 @@ struct OnboardingView: View {
     // MARK: - Finish
 
     private func finishOnboarding() {
-        // Save initial balance
-        if let balance = Decimal(string: balanceString), balance > 0 {
-            storage.setInitialBalance(balance)
-        }
-
         // Save accounts
         storage.accounts = onboardingAccounts.map {
             PaymentAccount(name: $0.name, type: $0.type, currencyCode: $0.currencyCode)
         }
 
-        // Apply base currency
-        if balanceString.isEmpty || Decimal(string: balanceString) == 0 {
-            storage.setBaseCurrency(balanceCurrency)
+        // Create initial balance transaction for the selected account
+        if let balance = Decimal(string: balanceString), balance > 0,
+           let accountId = selectedBalanceAccountId,
+           let account = onboardingAccounts.first(where: { $0.id == accountId }),
+           let cat = storage.categories.first(where: { $0.name == "Opening Balance" && $0.type == .income }) {
+
+            let tx = Transaction(
+                amount: balance,
+                type: .income,
+                categoryId: cat.id,
+                accountId: accountId,
+                currencyCode: account.currencyCode,
+                note: "Initial balance",
+                date: Date()
+            )
+            storage.addTransaction(tx)
         }
 
         storage.save()
