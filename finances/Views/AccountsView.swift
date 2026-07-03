@@ -5,6 +5,7 @@ struct AccountsView: View {
     @State private var showingAdd = false
     @State private var showingTransfer = false
     @State private var editingAccount: PaymentAccount?
+    @State private var accountToDelete: PaymentAccount?
 
     var body: some View {
         NavigationStack {
@@ -59,7 +60,9 @@ struct AccountsView: View {
                             }
                         }
                         .onDelete { offsets in
-                            for idx in offsets { storage.deleteAccount(storage.accounts[idx].id) }
+                            if let idx = offsets.first {
+                                accountToDelete = storage.accounts[idx]
+                            }
                         }
                     }
                 }
@@ -87,6 +90,27 @@ struct AccountsView: View {
             .sheet(isPresented: $showingAdd) { AddAccountView() }
             .sheet(isPresented: $showingTransfer) { TransferView() }
             .sheet(item: $editingAccount) { acc in AddAccountView(editing: acc) }
+            .confirmationDialog(
+                "Delete Account?",
+                isPresented: Binding(
+                    get: { accountToDelete != nil },
+                    set: { if !$0 { accountToDelete = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete Account & Transactions", role: .destructive) {
+                    if let acc = accountToDelete {
+                        storage.deleteAccount(acc.id)
+                    }
+                    accountToDelete = nil
+                }
+                Button("Cancel", role: .cancel) { accountToDelete = nil }
+            } message: {
+                if let acc = accountToDelete {
+                    let txCount = storage.transactions(forAccount: acc.id).count
+                    Text("This will permanently delete \"\(acc.name)\" and all \(txCount) linked transactions. This action cannot be undone.")
+                }
+            }
         }
     }
 }

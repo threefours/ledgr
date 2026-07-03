@@ -144,6 +144,9 @@ final class StorageManager {
 
     func deleteAccount(_ id: UUID) {
         accounts.removeAll { $0.id == id }
+        transactions.removeAll { tx in
+            tx.accountId == id || tx.destAccountId == id
+        }
         save()
     }
 
