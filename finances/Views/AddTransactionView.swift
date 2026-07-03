@@ -10,7 +10,6 @@ struct AddTransactionView: View {
     @State private var amountString = ""
     @State private var selectedCategoryId: UUID?
     @State private var selectedAccountId: UUID?
-    @State private var selectedCurrency: String = "USD"
     @State private var note = ""
     @State private var date = Date()
 
@@ -20,6 +19,13 @@ struct AddTransactionView: View {
 
     private var availableCategories: [Category] { storage.categories(for: type) }
     private var isEditing: Bool { editing != nil }
+
+    private var selectedAccountCurrency: String {
+        if let selectedAccountId, let acc = storage.account(by: selectedAccountId) {
+            return acc.currencyCode
+        }
+        return storage.baseCurrency
+    }
 
     var body: some View {
         NavigationStack {
@@ -47,9 +53,7 @@ struct AddTransactionView: View {
     private var typeSection: some View {
         Section {
             Picker("Type", selection: $type) {
-                ForEach(TransactionType.allCases, id: \.self) { t in
-                    Text(t.label).tag(t)
-                }
+                ForEach(TransactionType.allCases, id: \.self) { t in Text(t.label).tag(t) }
             }
             .pickerStyle(.segmented)
             .onChange(of: type) { _, _ in selectedCategoryId = nil }
@@ -57,9 +61,9 @@ struct AddTransactionView: View {
     }
 
     private var amountSection: some View {
-        Section("Amount") {
+        Section {
             HStack {
-                Text(Currency.symbol(for: selectedCurrency))
+                Text(Currency.symbol(for: selectedAccountCurrency))
                     .font(.title3.weight(.medium))
                     .foregroundStyle(.secondary)
                     .frame(width: 28)
@@ -70,11 +74,18 @@ struct AddTransactionView: View {
             }
             .padding(.vertical, 4)
 
-            Picker("Currency", selection: $selectedCurrency) {
-                ForEach(Currency.available) { c in
-                    Text("\(c.symbol)  \(c.code)  ·  \(c.name)").tag(c.code)
+            if let acc = selectedAccountId.flatMap({ storage.account(by: $0) }) {
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    Text("Currency: \(acc.currencyCode) — determined by account")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
+        } header: {
+            Text("Amount")
         }
     }
 
@@ -139,7 +150,7 @@ struct AddTransactionView: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(acc.name)
                                     .foregroundStyle(.primary)
-                                Text(acc.type.label)
+                                Text("\(acc.type.label) · \(acc.currencyCode)")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
@@ -179,11 +190,9 @@ struct AddTransactionView: View {
             amountString = NSDecimalNumber(decimal: editing.amount).stringValue
             selectedCategoryId = editing.categoryId
             selectedAccountId = editing.accountId
-            selectedCurrency = editing.currencyCode
             note = editing.note
             date = editing.date
         } else {
-            selectedCurrency = storage.baseCurrency
             if selectedAccountId == nil { selectedAccountId = storage.accounts.first?.id }
         }
     }
@@ -193,13 +202,15 @@ struct AddTransactionView: View {
               let catId = selectedCategoryId,
               let accId = selectedAccountId else { return }
 
+        let currency = storage.account(by: accId)?.currencyCode ?? storage.baseCurrency
+
         if let editing {
             var updated = editing
             updated.amount = amount
             updated.type = type
             updated.categoryId = catId
             updated.accountId = accId
-            updated.currencyCode = selectedCurrency
+            updated.currencyCode = currency
             updated.note = note.trimmingCharacters(in: .whitespaces)
             updated.date = date
             storage.updateTransaction(updated)
@@ -209,7 +220,7 @@ struct AddTransactionView: View {
                 type: type,
                 categoryId: catId,
                 accountId: accId,
-                currencyCode: selectedCurrency,
+                currencyCode: currency,
                 note: note.trimmingCharacters(in: .whitespaces),
                 date: date
             )

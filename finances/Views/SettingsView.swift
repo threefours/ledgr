@@ -9,24 +9,45 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 // Base Currency
-                Section("Base Currency") {
-                    Picker("Currency", selection: Binding(
-                        get: { storage.baseCurrency },
-                        set: { storage.setBaseCurrency($0) }
-                    )) {
-                        ForEach(Currency.available) { c in
-                            HStack {
-                                Text(c.symbol)
-                                    .frame(width: 24)
-                                Text(c.code)
-                                    .fontWeight(.medium)
-                                Text("—")
-                                Text(c.name)
+                Section {
+                    ForEach(Currency.available) { currency in
+                        Button {
+                            storage.setBaseCurrency(currency.code)
+                        } label: {
+                            HStack(spacing: 12) {
+                                Text(currency.symbol)
+                                    .font(.title3.weight(.medium))
+                                    .foregroundStyle(.green)
+                                    .frame(width: 32)
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(currency.code)
+                                        .font(.body.weight(.medium))
+                                        .foregroundStyle(.primary)
+                                    Text(currency.name)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+
+                                Spacer()
+
+                                if storage.baseCurrency == currency.code {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(.green)
+                                } else {
+                                    Circle()
+                                        .stroke(Color(.systemGray4), lineWidth: 1.5)
+                                        .frame(width: 22, height: 22)
+                                }
                             }
-                            .tag(c.code)
                         }
+                        .buttonStyle(.plain)
                     }
-                    .labelsHidden()
+                } header: {
+                    Text("Base Currency")
+                } footer: {
+                    Text("All balances and reports will use this currency for display.")
                 }
 
                 // Stats
@@ -35,26 +56,9 @@ struct SettingsView: View {
                     let catCount = storage.categories.count
                     let accCount = storage.accounts.count
 
-                    HStack {
-                        Label("Transactions", systemImage: "list.bullet")
-                        Spacer()
-                        Text("\(txCount)")
-                            .foregroundStyle(.secondary)
-                    }
-
-                    HStack {
-                        Label("Categories", systemImage: "square.grid.2x2")
-                        Spacer()
-                        Text("\(catCount)")
-                            .foregroundStyle(.secondary)
-                    }
-
-                    HStack {
-                        Label("Accounts", systemImage: "creditcard")
-                        Spacer()
-                        Text("\(accCount)")
-                            .foregroundStyle(.secondary)
-                    }
+                    statRow(icon: "list.bullet", label: "Transactions", value: "\(txCount)")
+                    statRow(icon: "square.grid.2x2", label: "Categories", value: "\(catCount)")
+                    statRow(icon: "creditcard", label: "Accounts", value: "\(accCount)")
                 }
 
                 // Data Management
@@ -91,9 +95,7 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .confirmationDialog("Reset All Data?", isPresented: $showResetConfirm, titleVisibility: .visible) {
-                Button("Reset", role: .destructive) {
-                    resetData()
-                }
+                Button("Reset", role: .destructive) { resetData() }
                 Button("Cancel", role: .cancel) {}
             } message: {
                 Text("This will delete all transactions, categories, and accounts. This action cannot be undone.")
@@ -101,6 +103,16 @@ struct SettingsView: View {
             .sheet(isPresented: $showDataManagement) {
                 DataManagementView()
             }
+        }
+    }
+
+    private func statRow(icon: String, label: String, value: String) -> some View {
+        HStack {
+            Label(label, systemImage: icon)
+            Spacer()
+            Text(value)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.secondary)
         }
     }
 
