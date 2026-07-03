@@ -20,7 +20,7 @@ struct TransferView: View {
 
     private var canSave: Bool {
         guard let from = fromAccountId, let to = toAccountId, from != to else { return false }
-        guard let amount = Decimal(string: amountString), amount > 0 else { return false }
+        guard let amount = CurrencyFormatter.parseDecimal(amountString), amount > 0 else { return false }
         return true
     }
 
@@ -123,7 +123,7 @@ struct TransferView: View {
     }
 
     private func save() {
-        guard let amount = Decimal(string: amountString),
+        guard let amount = CurrencyFormatter.parseDecimal(amountString),
               let from = fromAccountId,
               let to = toAccountId else { return }
 

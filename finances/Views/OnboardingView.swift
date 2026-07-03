@@ -386,7 +386,7 @@ struct OnboardingView: View {
         }
 
         // Create initial balance transaction for the selected account
-        if let balance = Decimal(string: balanceString), balance > 0,
+        if let balance = CurrencyFormatter.parseDecimal(balanceString), balance > 0,
            let accountId = selectedBalanceAccountId,
            let account = onboardingAccounts.first(where: { $0.id == accountId }),
            let cat = storage.categories.first(where: { $0.name == "Opening Balance" && $0.type == .income }) {
@@ -402,8 +402,6 @@ struct OnboardingView: View {
             )
             storage.addTransaction(tx)
         }
-
-        storage.save()
 
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         dismiss()

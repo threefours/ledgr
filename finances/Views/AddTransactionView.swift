@@ -182,7 +182,7 @@ struct AddTransactionView: View {
     // MARK: - Logic
 
     private var canSave: Bool {
-        guard let amount = Decimal(string: amountString), amount > 0 else { return false }
+        guard let amount = CurrencyFormatter.parseDecimal(amountString), amount > 0 else { return false }
         guard selectedCategoryId != nil else { return false }
         guard selectedAccountId != nil else { return false }
         return true
@@ -204,7 +204,7 @@ struct AddTransactionView: View {
     }
 
     private func save() {
-        guard let amount = Decimal(string: amountString),
+        guard let amount = CurrencyFormatter.parseDecimal(amountString),
               let catId = selectedCategoryId,
               let accId = selectedAccountId else { return }
 

@@ -11,6 +11,14 @@ struct CurrencyFormatter {
         return formatter.string(from: amount as NSDecimalNumber) ?? "\(currencyCode) \(amount)"
     }
 
+    /// Locale-independent decimal parser — works with both "." and "," separators
+    static func parseDecimal(_ string: String) -> Decimal? {
+        let cleaned = string
+            .replacingOccurrences(of: ",", with: ".")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return Decimal(string: cleaned, locale: Locale(identifier: "en_US_POSIX"))
+    }
+
     static func formatShort(_ amount: Decimal, currencyCode: String) -> String {
         let symbol = Currency.symbol(for: currencyCode)
         let doubleValue = NSDecimalNumber(decimal: amount).doubleValue
