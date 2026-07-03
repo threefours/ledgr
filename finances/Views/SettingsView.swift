@@ -10,42 +10,19 @@ struct SettingsView: View {
             List {
                 // Base Currency
                 Section {
-                    ForEach(Currency.available) { currency in
-                        Button {
-                            storage.setBaseCurrency(currency.code)
-                        } label: {
-                            HStack(spacing: 12) {
-                                Text(currency.symbol)
-                                    .font(.title3.weight(.medium))
-                                    .foregroundStyle(.green)
-                                    .frame(width: 32)
-
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(currency.code)
-                                        .font(.body.weight(.medium))
-                                        .foregroundStyle(.primary)
-                                    Text(currency.name)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                if storage.baseCurrency == currency.code {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .font(.title3)
-                                        .foregroundStyle(.green)
-                                } else {
-                                    Circle()
-                                        .stroke(Color(.systemGray4), lineWidth: 1.5)
-                                        .frame(width: 22, height: 22)
-                                }
+                    NavigationLink {
+                        CurrencyPickerView()
+                    } label: {
+                        HStack {
+                            Text("Base Currency")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if let cur = Currency.available.first(where: { $0.code == storage.baseCurrency }) {
+                                Text("\(cur.symbol)  \(cur.code)")
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        .buttonStyle(.plain)
                     }
-                } header: {
-                    Text("Base Currency")
                 } footer: {
                     Text("All balances and reports will use this currency for display.")
                 }
