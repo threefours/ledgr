@@ -59,6 +59,15 @@ built with swiftui and `@observable` (observation framework), zero external depe
 
 from *ledger* — a book for keeping financial records. just dropped a letter, shorter and cleaner.
 
+## contributing
+
+pull requests are welcome. a few ground rules:
+
+- keep it simple — this app is meant to be lightweight
+- match the existing style — swiftui, `@observable`, no third-party dependencies
+- if you're adding something big, open an issue first to discuss it
+- test on a real device or at least the simulator before submitting
+
 ## license
 
 mit — do whatever you want.
