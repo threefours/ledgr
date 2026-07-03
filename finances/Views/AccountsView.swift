@@ -3,6 +3,7 @@ import SwiftUI
 struct AccountsView: View {
     @Environment(StorageManager.self) private var storage
     @State private var showingAdd = false
+    @State private var showingTransfer = false
     @State private var editingAccount: PaymentAccount?
 
     var body: some View {
@@ -67,14 +68,24 @@ struct AccountsView: View {
             .navigationTitle("Accounts")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button { showingAdd = true } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(.green)
+                    HStack(spacing: 4) {
+                        if storage.accounts.count >= 2 {
+                            Button { showingTransfer = true } label: {
+                                Image(systemName: "arrow.left.arrow.right.circle.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                        Button { showingAdd = true } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(.green)
+                        }
                     }
                 }
             }
             .sheet(isPresented: $showingAdd) { AddAccountView() }
+            .sheet(isPresented: $showingTransfer) { TransferView() }
             .sheet(item: $editingAccount) { acc in AddAccountView(editing: acc) }
         }
     }

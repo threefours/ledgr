@@ -40,12 +40,14 @@ extension Category {
         Category(name: "Health", icon: "heart.fill", colorHex: "#FFEAA7", type: .expense),
         Category(name: "Bills", icon: "doc.text.fill", colorHex: "#DDA0DD", type: .expense),
         Category(name: "Education", icon: "book.fill", colorHex: "#98D8C8", type: .expense),
+        Category(name: "Transfer", icon: "arrow.left.arrow.right", colorHex: "#5B86E5", type: .expense),
         Category(name: "Other", icon: "ellipsis.circle.fill", colorHex: "#B0BEC5", type: .expense),
     ]
 
     static let defaultIncome: [Category] = [
         Category(name: "Opening Balance", icon: "banknote.fill", colorHex: "#2ECC71", type: .income),
         Category(name: "Salary", icon: "dollarsign.circle.fill", colorHex: "#27AE60", type: .income),
+        Category(name: "Transfer", icon: "arrow.left.arrow.right", colorHex: "#5B86E5", type: .income),
         Category(name: "Freelance", icon: "laptopcomputer", colorHex: "#3498DB", type: .income),
         Category(name: "Investments", icon: "chart.line.uptrend.xyaxis", colorHex: "#9B59B6", type: .income),
         Category(name: "Gifts", icon: "gift.fill", colorHex: "#E74C3C", type: .income),

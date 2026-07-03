@@ -281,12 +281,24 @@ struct TransactionRow: View {
         let account = storage.account(by: transaction.accountId)
 
         HStack(spacing: 12) {
-            Image(systemName: category?.icon ?? "questionmark")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(category?.color ?? .gray)
-                .frame(width: 36, height: 36)
-                .background((category?.color ?? .gray).opacity(0.12))
-                .clipShape(Circle())
+            ZStack {
+                Image(systemName: category?.icon ?? "questionmark")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(category?.color ?? .gray)
+                    .frame(width: 36, height: 36)
+                    .background((category?.color ?? .gray).opacity(0.12))
+                    .clipShape(Circle())
+
+                if transaction.isTransfer {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 16, height: 16)
+                        .background(Color.blue)
+                        .clipShape(Circle())
+                        .offset(x: 13, y: 13)
+                }
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(category?.name ?? "Unknown")

@@ -151,6 +151,53 @@ final class StorageManager {
         accounts.first { $0.id == id }
     }
 
+    // MARK: - Transfers
+
+    func transfer(
+        amount: Decimal,
+        from sourceAccountId: UUID,
+        to destAccountId: UUID,
+        date: Date = Date(),
+        note: String = ""
+    ) {
+        guard sourceAccountId != destAccountId,
+              let sourceAcc = account(by: sourceAccountId),
+              let destAcc = account(by: destAccountId) else { return }
+
+        let transferId = UUID()
+
+        guard let expenseCat = categories.first(where: { $0.name == "Transfer" && $0.type == .expense }),
+              let incomeCat = categories.first(where: { $0.name == "Transfer" && $0.type == .income }) else { return }
+
+        // Expense from source
+        let out = Transaction(
+            amount: amount,
+            type: .expense,
+            categoryId: expenseCat.id,
+            accountId: sourceAccountId,
+            currencyCode: sourceAcc.currencyCode,
+            note: note.isEmpty ? "Transfer to \(destAcc.name)" : note,
+            date: date,
+            transferId: transferId
+        )
+
+        // Income to destination
+        let incoming = Transaction(
+            amount: amount,
+            type: .income,
+            categoryId: incomeCat.id,
+            accountId: destAccountId,
+            currencyCode: destAcc.currencyCode,
+            note: note.isEmpty ? "Transfer from \(sourceAcc.name)" : note,
+            date: date,
+            transferId: transferId
+        )
+
+        transactions.append(contentsOf: [out, incoming])
+        transactions.sort { $0.date > $1.date }
+        save()
+    }
+
     // MARK: - Export / Import
 
     func exportData() -> Data? {
